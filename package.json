@@ -1,0 +1,34 @@
+{
+  "name": "ovenjoy",
+  "author": "Shubham Lad <shubhamlad1001+ovenjoy@gmail.com>",
+  "description": "Ovenjoy: Baking Delicious Web Servers with Bun",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShuLaPy/ovenjoy.git"
+  },
+  "keywords": [
+    "ovenjoy",
+    "bun",
+    "framework",
+    "web",
+    "server",
+    "http",
+    "rest",
+    "restful",
+    "router",
+    "routing",
+    "app",
+    "api",
+    "middleware"
+  ],
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
