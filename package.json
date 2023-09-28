@@ -10,6 +10,9 @@
     "type": "git",
     "url": "git+https://github.com/ShuLaPy/ovenjoy.git"
   },
+  "scripts": {
+    "dev": "bun --watch examples/http/index.ts"
+  },
   "keywords": [
     "ovenjoy",
     "bun",

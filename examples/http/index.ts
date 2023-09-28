@@ -1,6 +1,4 @@
-console.log("Hello World")
-
 import Ovenjoy from 'ovenjoy';
 const app = Ovenjoy();
 
-app.listen(3000, () => console.log('Hello World'));
+app.listen(3000, () => console.log('Server is running on port 3000 🚀'));

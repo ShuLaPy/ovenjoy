@@ -5,6 +5,10 @@
     "target": "esnext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
+    "baseUrl": ".",
+    "paths": {
+      "ovenjoy": ["index.ts"]
+    },
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "composite": true,
