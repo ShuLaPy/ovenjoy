@@ -1,8 +1,12 @@
 import type { Serve, Server } from 'bun';
+import { Handler, HttpMethods } from '@ovenjoy-types';
+import Router from './router/router';
 
-class OvenJoyServer {
+class OvenJoyServer implements HttpMethods {
   // singleton OvenJoy Server
   private static server?: OvenJoyServer;
+  private _router: Router;
+  private readonly errorHandlers: Handler[] = [];
 
   // Make sure we return same instance when called multiple times
   public static getInstance(): OvenJoyServer {
@@ -11,6 +15,92 @@ class OvenJoyServer {
     }
 
     return OvenJoyServer.server;
+  }
+
+  lazyrouter() {
+    if (!this._router) {
+      this._router = new Router();
+    }
+  }
+
+  get(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.get(path, ...handlers);
+  }
+
+  delete(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.delete(path, ...handlers);
+  }
+
+  head(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.head(path, ...handlers);
+  }
+
+  patch(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.patch(path, ...handlers);
+  }
+
+  post(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.post(path, ...handlers);
+  }
+
+  put(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.put(path, ...handlers);
+  }
+
+  options(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.options(path, ...handlers);
+  }
+
+  propfind(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.propfind(path, ...handlers);
+  }
+
+  proppatch(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.proppatch(path, ...handlers);
+  }
+
+  mkcol(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.mkcol(path, ...handlers);
+  }
+
+  copy(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.copy(path, ...handlers);
+  }
+
+  move(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.move(path, ...handlers);
+  }
+
+  lock(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.lock(path, ...handlers);
+  }
+
+  unlock(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.unlock(path, ...handlers);
+  }
+
+  trace(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.trace(path, ...handlers);
+  }
+
+  search(path: string, ...handlers: Handler[]) {
+    this.lazyrouter();
+    this._router.search(path, ...handlers);
   }
 
   /**

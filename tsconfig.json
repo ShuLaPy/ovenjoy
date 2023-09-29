@@ -7,9 +7,11 @@
     "moduleDetection": "force",
     "baseUrl": ".",
     "paths": {
-      "ovenjoy": ["index.ts"]
+      "ovenjoy": ["index.ts"],
+      "@ovenjoy-types": ["./lib/types.ts"]
     },
     "allowImportingTsExtensions": true,
+    "strictPropertyInitialization": false,
     "noEmit": true,
     "composite": true,
     "strict": true,
