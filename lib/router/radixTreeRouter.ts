@@ -33,8 +33,7 @@ export default class OvenjoyRadixRouter {
   private staticRoutesMap: Record<string, Node> = {};
 
   constructor(options: { trailingSlashRedirect?: boolean } = {}) {
-    this.trailingSlashRedirect =
-      options.trailingSlashRedirect === false ? false : true;
+    this.trailingSlashRedirect = options.trailingSlashRedirect !== false;
   }
 
   findHandler(path: string) {
@@ -46,7 +45,7 @@ export default class OvenjoyRadixRouter {
     }
 
     const { node, params } = this.findMatchingNode(path, this.rootNode);
-    const handler = (node?.data || null) as any;
+    const handler = node?.data || null;
 
     if (handler && params) {
       handler.params = params;
@@ -115,7 +114,7 @@ export default class OvenjoyRadixRouter {
   }
 
   private getNodeType(str: string) {
-    if (str[0] === ':') {
+    if (str.startsWith(':')) {
       return NodeType.Placeholder;
     } else if (str === '**') {
       return NodeType.Wildcard;

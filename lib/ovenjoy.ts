@@ -1,5 +1,5 @@
 import type { Serve, Server } from 'bun';
-import { Handler, HttpMethods } from '@ovenjoy-types';
+import { Handler, HttpMethodTypes, HttpMethods } from '@ovenjoy-types';
 import Router from './router/router';
 
 class OvenJoyServer implements HttpMethods {
@@ -7,6 +7,10 @@ class OvenJoyServer implements HttpMethods {
   private static server?: OvenJoyServer;
   private _router: Router;
   private readonly errorHandlers: Handler[] = [];
+
+  constructor() {
+    this.lazyrouter();
+  }
 
   // Make sure we return same instance when called multiple times
   public static getInstance(): OvenJoyServer {
@@ -17,89 +21,96 @@ class OvenJoyServer implements HttpMethods {
     return OvenJoyServer.server;
   }
 
+  /**
+   * lazily adds the base router if it has not yet been added.
+   *
+   * @private
+   */
   lazyrouter() {
     if (!this._router) {
       this._router = new Router();
     }
   }
 
+  /**
+   * Registers a route with the specified path and request handlers.
+   *
+   * @param {string} path - The URL path for the route.
+   * @param {...Handler} handlers - Middlewares and The request handler functions to execute for the route.
+   *
+   * @example
+   * const middlewareFunction1 = function (req, res, next) {
+   *   console.log("Middleware One");
+   *   next();
+   * };
+   *
+   * app.get("/admin", middlewareFunction1, function (req, res) {
+   *   res.send("Admin Homepage");
+   * });
+   * 
+   */
+
   get(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.get(path, ...handlers);
   }
 
   delete(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.delete(path, ...handlers);
   }
 
   head(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.head(path, ...handlers);
   }
 
   patch(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.patch(path, ...handlers);
   }
 
   post(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.post(path, ...handlers);
   }
 
   put(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.put(path, ...handlers);
   }
 
   options(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.options(path, ...handlers);
   }
 
   propfind(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.propfind(path, ...handlers);
   }
 
   proppatch(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.proppatch(path, ...handlers);
   }
 
   mkcol(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.mkcol(path, ...handlers);
   }
 
   copy(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.copy(path, ...handlers);
   }
 
   move(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.move(path, ...handlers);
   }
 
   lock(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.lock(path, ...handlers);
   }
 
   unlock(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.unlock(path, ...handlers);
   }
 
   trace(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.trace(path, ...handlers);
   }
 
   search(path: string, ...handlers: Handler[]) {
-    this.lazyrouter();
     this._router.search(path, ...handlers);
   }
 
@@ -117,7 +128,7 @@ class OvenJoyServer implements HttpMethods {
   listen(port: string | number, cb?: () => void): Server {
     try {
       const server = Bun.serve(this.getSettings(port));
-      cb?.call(null);
+      cb?.();
       return server;
     } catch (error: any) {
       const err = 'Ovenjoy Error: ' + error?.message;
