@@ -1,16 +1,25 @@
-import { Handler, Middleware } from '@ovenjoy-types';
+import { Handler, RouteDataType } from '@ovenjoy-types';
 
+/**
+ * Represents a node in the radix tree used by OvenjoyRadixRouter.
+ */
 class Node {
   paramName: string;
   children: Record<string, Node>;
-  data: any;
+  data: Nullable<RouteDataType>;
   placeholderChild: Node | null = null;
   wildcardChild: Node | null = null;
 
+  /**
+   * Creates an instance of the Node class.
+   * @param options - An object with optional parameters.
+   * @param {string} options.paramName - The parameter name associated with the node.
+   * @param {RouteDataType} options.data - The data associated with the node.
+   */
   constructor(
     options: {
       paramName?: string;
-      data?: any;
+      data?: RouteDataType;
     } = {}
   ) {
     const { paramName = '', data = null } = options;
@@ -21,22 +30,44 @@ class Node {
   }
 }
 
+/**
+ * Enum representing different types of nodes in the radix tree.
+ */
+
 enum NodeType {
   Normal = 0,
   Wildcard = 1,
   Placeholder = 2,
 }
 
+/**
+ * OvenjoyRadixRouter is a radix tree-based router for handling routes and route data.
+ */
 export default class OvenjoyRadixRouter {
   private rootNode: Node = new Node();
   private trailingSlashRedirect: boolean;
   private staticRoutesMap: Record<string, Node> = {};
 
+  /**
+   * Creates an instance of the OvenjoyRadixRouter class.
+   * @param options - An object with optional parameters.
+   * @param options.trailingSlashRedirect - If true, trailing slashes will be redirected (default: true).
+   */
   constructor(options: { trailingSlashRedirect?: boolean } = {}) {
     this.trailingSlashRedirect = options.trailingSlashRedirect !== false;
   }
 
-  findHandler(path: string) {
+  /**
+   * Find a route handler for a given path.
+   * @param {string} path - The path to find a handler for.
+   * @returns The route handler for the specified path, or null if not found.
+   * @example
+   * const handler = router.findHandler('/example');
+   * if (handler) {
+   *   const { path, middlewares, params } = handler;
+   * }
+   */
+  findHandler(path: string): Nullable<RouteDataType> {
     path = this.validateInput(path);
 
     const staticPathNode = this.staticRoutesMap[path];
@@ -54,11 +85,16 @@ export default class OvenjoyRadixRouter {
     return handler;
   }
 
-  addRoute(data: {
-    path: string;
-    handler: Handler;
-    middlewares?: Middleware[];
-  }) {
+  /**
+   * Add a route to the router.
+   * @param data - An object containing route data.
+   * @param {string} data.path - The route path.
+   * @param {Handler[]} data.middlewares - An array of route middleware functions and handler.
+   * @returns {Node} The added node in the radix tree.
+   * @example
+   * const node = router.addRoute({ path: '/example', [middleware1, middleware2] });
+   */
+  addRoute(data: { path: string; middlewares: Handler[] }): Node {
     let path = this.validateInput(data.path);
     let isStaticRoute = true;
 
@@ -110,7 +146,7 @@ export default class OvenjoyRadixRouter {
       return path.slice(0, -1);
     }
 
-    return path;
+    return path.replace(/^\/+/, '');
   }
 
   private getNodeType(str: string) {
@@ -123,6 +159,15 @@ export default class OvenjoyRadixRouter {
     }
   }
 
+  /**
+   * Finds the matching node in the radix tree for a given path.
+   * @param {string} path - The path to find a matching node for.
+   * @param {Node} rootNode - The root node of the radix tree to search within.
+   * @returns An object containing the matching node and any associated route parameters.
+   * - `node` is the matching node in the radix tree.
+   * - `params` is an object containing route parameters, if any were found during the search.
+   *
+   */
   private findMatchingNode(path: string, rootNode: Node) {
     const sections = path.split('/');
     const params: { [key: string]: string } = {};

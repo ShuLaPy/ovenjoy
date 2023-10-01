@@ -1,17 +1,44 @@
+import type OvenjoyRequest from './request';
+import type OvenjoyResponse from './response';
 import type OvenjoyRadixRouter from './router/radixTreeRouter';
 
-export type Handler = (
-  req: any,
-  res: any,
-  next?: (err?: Error) => {},
-  err?: Error
+declare global {
+  type Nullable<T> = T | undefined | null;
+}
+
+export type ErrorHandler = (
+  err: Error,
+  req: OvenjoyRequest,
+  res: OvenjoyResponse,
+  next?: (err?: Error) => void
 ) => void | Promise<any>;
 
-export type Middleware = (req: any, res: any, next: () => void) => void;
+export type Handler = (
+  req: OvenjoyRequest,
+  res: OvenjoyResponse,
+  next?: () => void
+) => void;
 
 export type RequestMapTypes = {
   [key in HttpMethodTypes]?: OvenjoyRadixRouter;
 };
+
+export type RouteDataType = {
+  path: string;
+  middlewares: Handler[];
+  params?: {
+    [key: string]: string;
+  };
+};
+
+export interface ResponseInit {
+  headers?: Record<string, string>;
+  /** @default 200 */
+  status?: number | bigint;
+
+  /** @default "OK" */
+  statusText?: string;
+}
 
 export interface HttpMethods {
   delete: (path: string, ...handlers: Handler[]) => void;

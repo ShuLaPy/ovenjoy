@@ -2,10 +2,15 @@ import {
   Handler,
   HttpMethodTypes,
   HttpMethods,
-  Middleware,
   RequestMapTypes,
+  RouteDataType,
 } from '@ovenjoy-types';
 import OvenjoyRadixRouter from './radixTreeRouter';
+import type OvenjoyRequest from 'lib/request';
+
+type Mutable<T> = {
+  -readonly [k in keyof T]: T[k];
+};
 
 class Router implements HttpMethods {
   private static router?: Router;
@@ -130,8 +135,7 @@ class Router implements HttpMethods {
 
   private register(path: string, method: HttpMethodTypes, handlers: Handler[]) {
     // Extract middlewares and the final handler from the handlers array
-    const middlewares = handlers.slice(0, handlers.length - 1) as Middleware[];
-    const handler = handlers[handlers.length - 1];
+    const middlewares = handlers.slice(0, handlers.length);
 
     // Get or create the router tree for the specified HTTP method
     let routerTree = this.requestMap[method];
@@ -145,15 +149,32 @@ class Router implements HttpMethods {
     // Add the route to the router tree
     routerTree!.addRoute({
       path,
-      handler,
       middlewares,
     });
   }
 
-  match(path: string, method: HttpMethodTypes) {
+  /**
+   * Handles an OvenjoyRequest by matching it to a route handler and updating the request object.
+   * @param req - The OvenjoyRequest object to be handled.
+   * @throws {Error} If no matching route handler is found for the request.
+   * 
+   */
+  handle(req: OvenjoyRequest) {
+    const mutableOvenjoyRequest = req as Mutable<OvenjoyRequest>;
+    const handler = this.match(req.path, req.method as HttpMethodTypes);
+
+    if (!handler) {
+      throw new Error(`Cannot ${req.method} ${req.path}`);
+    }
+
+    const { params, ...routeData } = handler;
+    mutableOvenjoyRequest.params = params;
+    mutableOvenjoyRequest.route = routeData;
+  }
+
+  match(path: string, method: HttpMethodTypes): Nullable<RouteDataType> {
     const routerTree = this.requestMap[method];
     return routerTree?.findHandler(path);
   }
 }
-
 export default Router;

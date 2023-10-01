@@ -1,6 +1,8 @@
 import type { Serve, Server } from 'bun';
-import { Handler, HttpMethodTypes, HttpMethods } from '@ovenjoy-types';
+import { Handler, HttpMethods } from '@ovenjoy-types';
 import Router from './router/router';
+import OvenjoyRequest from './request';
+import OvenjoyResponse from './response';
 
 class OvenJoyServer implements HttpMethods {
   // singleton OvenJoy Server
@@ -47,7 +49,7 @@ class OvenJoyServer implements HttpMethods {
    * app.get("/admin", middlewareFunction1, function (req, res) {
    *   res.send("Admin Homepage");
    * });
-   * 
+   *
    */
 
   get(path: string, ...handlers: Handler[]) {
@@ -158,16 +160,59 @@ class OvenJoyServer implements HttpMethods {
    * Handle all incomming requests.
    *
    * @param {Request} req
-   * @return {Response}
+   * @return {Promise<Response>}
    * @private
    */
 
   private fetch = async (req: Request): Promise<Response> => {
-    const headers = { 'Content-Type': 'application/json' };
-    return new Response(JSON.stringify({ data: 'Hello World' }), {
-      headers,
-    });
+    const request = new OvenjoyRequest(req);
+    const response = new OvenjoyResponse();
+    const { middlewares } = request.route;
+    const res = await this.execute(request, response, middlewares);
+    return res;
   };
+
+  /**
+   * Executes a sequence of middleware functions in a pipeline to handle
+   * an incoming OvenjoyRequest and generate an OvenjoyResponse.
+   *
+   * This method is responsible for processing the request and response objects
+   * through a chain of middleware functions, allowing each middleware function
+   * to perform specific tasks or modifications to the request and response.
+   * Middleware functions are executed in the order they are provided
+   * in the `middlewareStack` array.
+   *
+   * @param {OvenjoyRequest} req - The OvenjoyRequest object representing the incoming request.
+   * @param {OvenjoyResponse} res - The OvenjoyResponse object representing the response to be generated.
+   * @param {Handler[]} middlewareStack - An array of middleware functions to be executed in order.
+   * @returns {Promise<Response>} A Promise that resolves when one of the middleware functions completes the response (ex. res.json(), res.send()).
+   * @throws {Error} If an error occurs during the execution of a middleware function, it is propagated up as an error.
+   *
+   */
+
+  execute(
+    req: OvenjoyRequest,
+    res: OvenjoyResponse,
+    middlewareStack: Handler[]
+  ): Promise<Response> {
+    return new Promise((resolve) => {
+      let currentIndex = 0;
+
+      if (!middlewareStack) return;
+
+      const next = (err?: Error): void => {
+        if (err) throw err;
+        if (currentIndex < middlewareStack.length) {
+          const currentMiddleware = middlewareStack[currentIndex];
+          currentIndex++;
+          if (res.isReady) resolve(res.getResponse);
+          currentMiddleware(req, res, next);
+        }
+      };
+
+      next(); // Start the middleware chain
+    });
+  }
 
   /**
    * Handle request processing errors
