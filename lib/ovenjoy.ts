@@ -202,15 +202,18 @@ class OvenJoyServer implements HttpMethods {
 
       const next = (err?: Error): void => {
         if (err) throw err;
+        if (res.isReady) resolve(res.getResponse);
         if (currentIndex < middlewareStack.length) {
           const currentMiddleware = middlewareStack[currentIndex];
           currentIndex++;
-          if (res.isReady) resolve(res.getResponse);
           currentMiddleware(req, res, next);
         }
       };
 
       next(); // Start the middleware chain
+
+      if (currentIndex === middlewareStack.length && res.isReady)
+        resolve(res.getResponse);
     });
   }
 
