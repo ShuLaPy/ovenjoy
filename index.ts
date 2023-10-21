@@ -1,9 +1,11 @@
 import OvenjoyServer from './lib/ovenjoy';
 
-function server() {
+function server(): OvenjoyServer {
   return OvenjoyServer.getInstance();
 }
 
-// TODO: add Router method here
+server.Router = OvenjoyServer.getInstance().router.bind(
+  OvenjoyServer.getInstance()
+);
 
 export default server;

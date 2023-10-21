@@ -3,10 +3,13 @@ import {
   HttpMethodTypes,
   HttpMethods,
   RequestMapTypes,
+  RequestTuple,
   RouteDataType,
+  RouteRequestMapper,
 } from '@ovenjoy-types';
-import OvenjoyRadixRouter from './radixTreeRouter';
 import type OvenjoyRequest from 'lib/request';
+import path from 'path';
+import type OvenJoyServer from 'lib/ovenjoy';
 
 type Mutable<T> = {
   -readonly [k in keyof T]: T[k];
@@ -14,9 +17,13 @@ type Mutable<T> = {
 
 class Router implements HttpMethods {
   private static router?: Router;
-  private readonly requestMap: RequestMapTypes = {};
+  private localRequestMap: RouteRequestMapper = {};
+  private mountpath = '';
 
-  constructor(private routerOptions?: any) {
+  constructor(
+    private requestMap: RequestMapTypes,
+    private register: OvenJoyServer['register']
+  ) {
     if (Router.router) {
       return Router.router;
     }
@@ -25,11 +32,7 @@ class Router implements HttpMethods {
 
   // Make sure we return same instance when called multiple times
   public static getInstance(options = {}): Router {
-    if (!Router.router) {
-      Router.router = new Router(options);
-    }
-
-    return Router.router;
+    return Router.router as Router;
   }
 
   /**
@@ -51,113 +54,135 @@ class Router implements HttpMethods {
    */
 
   get(path: string, ...handlers: Handler[]) {
-    this.register(path, 'GET', handlers);
+    this.delegate(path, 'GET', handlers);
   }
 
   delete(path: string, ...handlers: Handler[]) {
-    this.register(path, 'DELETE', handlers);
+    this.delegate(path, 'DELETE', handlers);
   }
 
   head(path: string, ...handlers: Handler[]) {
-    this.register(path, 'HEAD', handlers);
+    this.delegate(path, 'HEAD', handlers);
   }
 
   patch(path: string, ...handlers: Handler[]) {
-    this.register(path, 'PATCH', handlers);
+    this.delegate(path, 'PATCH', handlers);
   }
 
   post(path: string, ...handlers: Handler[]) {
-    this.register(path, 'POST', handlers);
+    this.delegate(path, 'POST', handlers);
   }
 
   put(path: string, ...handlers: Handler[]) {
-    this.register(path, 'PUT', handlers);
+    this.delegate(path, 'PUT', handlers);
   }
 
   options(path: string, ...handlers: Handler[]) {
-    this.register(path, 'OPTIONS', handlers);
+    this.delegate(path, 'OPTIONS', handlers);
   }
 
   propfind(path: string, ...handlers: Handler[]) {
-    this.register(path, 'PROPFIND', handlers);
+    this.delegate(path, 'PROPFIND', handlers);
   }
 
   proppatch(path: string, ...handlers: Handler[]) {
-    this.register(path, 'PROPPATCH', handlers);
+    this.delegate(path, 'PROPPATCH', handlers);
   }
 
   mkcol(path: string, ...handlers: Handler[]) {
-    this.register(path, 'MKCOL', handlers);
+    this.delegate(path, 'MKCOL', handlers);
   }
 
   copy(path: string, ...handlers: Handler[]) {
-    this.register(path, 'COPY', handlers);
+    this.delegate(path, 'COPY', handlers);
   }
 
   move(path: string, ...handlers: Handler[]) {
-    this.register(path, 'MOVE', handlers);
+    this.delegate(path, 'MOVE', handlers);
   }
 
   lock(path: string, ...handlers: Handler[]) {
-    this.register(path, 'LOCK', handlers);
+    this.delegate(path, 'LOCK', handlers);
   }
 
   unlock(path: string, ...handlers: Handler[]) {
-    this.register(path, 'UNLOCK', handlers);
+    this.delegate(path, 'UNLOCK', handlers);
   }
 
   trace(path: string, ...handlers: Handler[]) {
-    this.register(path, 'TRACE', handlers);
+    this.delegate(path, 'TRACE', handlers);
   }
 
   search(path: string, ...handlers: Handler[]) {
-    this.register(path, 'SEARCH', handlers);
+    this.delegate(path, 'SEARCH', handlers);
   }
 
-  /**
-   * Registers a route with the specified path, HTTP method, and request handlers.
-   *
-   * This method is responsible for adding a new route definition to the server's routing system.
-   * A route definition consists of a URL path, an HTTP method, and a series of request handlers.
-   * Request handlers are functions that process incoming requests and generate responses.
-   *
-   * @private
-   * @param {string} path - The URL path for the route.
-   * @param {HttpMethodTypes} method - The HTTP method for the route (e.g., 'GET', 'POST').
-   * @param {Handler[]} handlers - An array of request handler functions to execute for the route.
-   *
-   * @example
-   * // Register a GET route that responds to requests at '/api/users'
-   * this.register('/api/users', 'GET', [getUserListHandler, sendResponseHandler]);
-   *
-   * @see {@link OvenjoyRadixRouter} for the routing system used to manage routes.
-   */
+  private delegate(
+    localPath: string,
+    method: HttpMethodTypes,
+    handlers: Handler[]
+  ) {
+    this.submitToMap(method.toLowerCase(), localPath, handlers);
+  }
 
-  private register(path: string, method: HttpMethodTypes, handlers: Handler[]) {
-    // Extract middlewares and the final handler from the handlers array
-    const middlewares = handlers.slice(0, handlers.length);
-
-    // Get or create the router tree for the specified HTTP method
-    let routerTree = this.requestMap[method];
-
-    if (!routerTree) {
-      this.requestMap[method.toUpperCase() as keyof RequestMapTypes] =
-        new OvenjoyRadixRouter();
-      routerTree = this.requestMap[method];
+  private submitToMap(method: string, path: string, handlers: Handler[]) {
+    let targetMap: RequestTuple[] | undefined = this.localRequestMap[method];
+    if (!targetMap) {
+      this.localRequestMap[method] = [];
+      targetMap = this.localRequestMap[method];
     }
 
-    // Add the route to the router tree
-    routerTree!.addRoute({
+    targetMap?.push({
       path,
-      middlewares,
+      handlers,
     });
+  }
+
+  mount(localPath: string, router: Router) {
+    router.mergeRoutes(localPath, this.mountpath, this.submitToMap.bind(this));
+  }
+
+  mergeRoutes(
+    localPath: string,
+    mountPath: string = '',
+    submitToMapFun: Router['submitToMap']
+  ) {
+    this.mountpath = path.join(mountPath, localPath);
+
+    for (const k in this.localRequestMap) {
+      const method = k;
+      const reqArr: Array<RequestTuple> = this.localRequestMap[k];
+      reqArr.forEach((v, _) => {
+        submitToMapFun(
+          method,
+          path.join(mountPath, localPath, v.path),
+          v.handlers
+        );
+      });
+    }
+  }
+
+  attach(globalPath: string, mountPath: string = '') {
+    this.mountpath = path.join(mountPath, globalPath);
+
+    for (const k in this.localRequestMap) {
+      const method = k;
+      const reqArr: Array<RequestTuple> = this.localRequestMap[k];
+      reqArr.forEach((v, _) => {
+        this.register.apply(this, [
+          path.join(mountPath, globalPath, v.path),
+          method as HttpMethodTypes,
+          v.handlers,
+        ]);
+      });
+    }
   }
 
   /**
    * Handles an OvenjoyRequest by matching it to a route handler and updating the request object.
    * @param req - The OvenjoyRequest object to be handled.
    * @throws {Error} If no matching route handler is found for the request.
-   * 
+   *
    */
   handle(req: OvenjoyRequest) {
     const mutableOvenjoyRequest = req as Mutable<OvenjoyRequest>;

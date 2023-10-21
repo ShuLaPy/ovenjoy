@@ -20,7 +20,19 @@ export type Handler = (
 ) => void;
 
 export type RequestMapTypes = {
-  [key in HttpMethodTypes]?: OvenjoyRadixRouter;
+  [key in HttpMethodTypes as string]?: OvenjoyRadixRouter;
+};
+
+export interface RequestTuple {
+  path: string;
+  handlers: Handler[];
+}
+
+/**
+ * Router method mapper
+ */
+export type RouteRequestMapper = {
+  [key in HttpMethodTypes as string]: RequestTuple[];
 };
 
 export type RouteDataType = {

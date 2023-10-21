@@ -1,5 +1,5 @@
 import { RouteDataType } from '@ovenjoy-types';
-import Router from './router/router';
+import OvenJoyServer from './ovenjoy';
 
 class OvenjoyRequest extends Request {
   public readonly params: Nullable<{ [key: string]: string }>;
@@ -10,7 +10,7 @@ class OvenjoyRequest extends Request {
   constructor(req: Request) {
     super(req);
     this.path = new URL(req.url).pathname;
-    Router.getInstance().handle(this);
+    OvenJoyServer.getInstance().router().handle(this);
   }
 
   // req.path - /about/admin/12345 - DONE
