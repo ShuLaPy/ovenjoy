@@ -26,12 +26,16 @@ describe('register different routes', () => {
       console.log('User created');
     });
 
-    const router = Router.getInstance();
+    var server = app.listen(5500);
+
+    const router = app.router();
 
     expect(router.match('/user/hello', 'GET')).toBeTruthy();
     expect(router.match('/user/me', 'GET')).toBeTruthy();
     expect(router.match('/user/me', 'POST')).toBeTruthy();
     expect(router.match('/user/me/hello', 'POST')).toBeFalsy();
+
+    server?.stop();
   });
 
   test('param object should be returned for paramRoutes', () => {
@@ -41,7 +45,11 @@ describe('register different routes', () => {
       console.log('Hello user');
     });
 
-    const router = Router.getInstance();
+    var server = app.listen(5500);
+
+    const router = app.router();
+
+    // const router = Router.getInstance();
 
     expect(
       router.match('/user/shubham/software-engineer', 'GET')
@@ -49,5 +57,7 @@ describe('register different routes', () => {
       name: 'shubham',
       profession: 'software-engineer',
     });
+
+    server?.stop();
   });
 });

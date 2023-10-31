@@ -31,8 +31,10 @@ class OvenJoyServer implements HttpMethods {
   }
 
   public router(): Router {
-    this.lazyrouter();
-    return this._router;
+    // TODO: Code cleaning
+    // this.lazyrouter();
+    // return this._router;
+    return new Router(this.requestMap, this.register);
   }
 
   /**
@@ -65,71 +67,76 @@ class OvenJoyServer implements HttpMethods {
    */
 
   get(path: string, ...handlers: Handler[]) {
-    this.register(path, 'GET', handlers);
+    this._router.get(path, ...handlers);
   }
 
   delete(path: string, ...handlers: Handler[]) {
-    this.register(path, 'DELETE', handlers);
+    this._router.delete(path, ...handlers);
   }
 
   head(path: string, ...handlers: Handler[]) {
-    this.register(path, 'HEAD', handlers);
+    this._router.head(path, ...handlers);
   }
 
   patch(path: string, ...handlers: Handler[]) {
-    this.register(path, 'PATCH', handlers);
+    this._router.patch(path, ...handlers);
   }
 
   post(path: string, ...handlers: Handler[]) {
-    this.register(path, 'POST', handlers);
+    this._router.post(path, ...handlers);
   }
 
   put(path: string, ...handlers: Handler[]) {
-    this.register(path, 'PUT', handlers);
+    this._router.put(path, ...handlers);
   }
 
   options(path: string, ...handlers: Handler[]) {
-    this.register(path, 'OPTIONS', handlers);
+    this._router.options(path, ...handlers);
   }
 
   propfind(path: string, ...handlers: Handler[]) {
-    this.register(path, 'PROPFIND', handlers);
+    this._router.propfind(path, ...handlers);
   }
 
   proppatch(path: string, ...handlers: Handler[]) {
-    this.register(path, 'PROPPATCH', handlers);
+    this._router.proppatch(path, ...handlers);
   }
 
   mkcol(path: string, ...handlers: Handler[]) {
-    this.register(path, 'MKCOL', handlers);
+    this._router.mkcol(path, ...handlers);
   }
 
   copy(path: string, ...handlers: Handler[]) {
-    this.register(path, 'COPY', handlers);
+    this._router.delete(path, ...handlers);
   }
 
   move(path: string, ...handlers: Handler[]) {
-    this.register(path, 'MOVE', handlers);
+    this._router.move(path, ...handlers);
   }
 
   lock(path: string, ...handlers: Handler[]) {
-    this.register(path, 'LOCK', handlers);
+    this._router.lock(path, ...handlers);
   }
 
   unlock(path: string, ...handlers: Handler[]) {
-    this.register(path, 'UNLOCK', handlers);
+    this._router.unlock(path, ...handlers);
   }
 
   trace(path: string, ...handlers: Handler[]) {
-    this.register(path, 'TRACE', handlers);
+    this._router.trace(path, ...handlers);
   }
 
   search(path: string, ...handlers: Handler[]) {
-    this.register(path, 'SEARCH', handlers);
+    this._router.search(path, ...handlers);
   }
 
   mount(localPath: string, router: Router) {
-    router.attach(localPath);
+    // router.attach(localPath);
+    this._router.mount(localPath, router);
+  }
+
+  use(handler: Handler) {
+    this._router.use(handler);
   }
 
   /**
@@ -167,6 +174,7 @@ class OvenJoyServer implements HttpMethods {
     // Add the route to the router tree
     routerTree!.addRoute({
       path,
+      // middlewares: [...this.appMiddlewares, ...handlers],
       middlewares: handlers,
     });
   }
@@ -184,6 +192,7 @@ class OvenJoyServer implements HttpMethods {
 
   listen(port: string | number, cb?: () => void): Server {
     try {
+      this._router.attach('/');
       const server = Bun.serve(this.getSettings(port));
       cb?.();
       return server;
@@ -257,18 +266,19 @@ class OvenJoyServer implements HttpMethods {
 
       const next = (err?: Error): void => {
         if (err) throw err;
-        if (res.isReady) resolve(res.getResponse);
         if (currentIndex < middlewareStack.length) {
           const currentMiddleware = middlewareStack[currentIndex];
           currentIndex++;
           currentMiddleware(req, res, next);
         }
+        if (res.isReady) resolve(res.getResponse);
       };
 
       next(); // Start the middleware chain
 
-      if (currentIndex === middlewareStack.length && res.isReady)
-        resolve(res.getResponse);
+      // TODO: Code cleaning
+      // if (currentIndex === middlewareStack.length && res.isReady)
+      //   resolve(res.getResponse);
     });
   }
 

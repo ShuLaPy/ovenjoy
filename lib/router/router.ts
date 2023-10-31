@@ -16,23 +16,25 @@ type Mutable<T> = {
 };
 
 class Router implements HttpMethods {
-  private static router?: Router;
+  private static router: Router;
   private localRequestMap: RouteRequestMapper = {};
+  private routeMiddlewares: Handler[] = [];
   private mountpath = '';
 
   constructor(
     private requestMap: RequestMapTypes,
     private register: OvenJoyServer['register']
   ) {
-    if (Router.router) {
-      return Router.router;
-    }
+    // TODO: Code cleaning
+    // if (Router.router) {
+    //   return Router.router;
+    // }
     Router.router = this;
   }
 
   // Make sure we return same instance when called multiple times
   public static getInstance(options = {}): Router {
-    return Router.router as Router;
+    return Router.router;
   }
 
   /**
@@ -134,34 +136,65 @@ class Router implements HttpMethods {
 
     targetMap?.push({
       path,
-      handlers,
+      handlers: [...this.routeMiddlewares, ...handlers],
+    });
+  }
+
+  use(handler: Handler) {
+    this.routeMiddlewares.push(handler);
+    Object.keys(this.localRequestMap).forEach((method) => {
+      const targetMap = this.localRequestMap[method];
+      this.localRequestMap[method] = targetMap.map((route) => {
+        route.handlers.push(handler);
+        return route;
+      });
     });
   }
 
   mount(localPath: string, router: Router) {
-    router.mergeRoutes(localPath, this.mountpath, this.submitToMap.bind(this));
+    // router.mergeRoutes(localPath, this.mountpath, this.submitToMap.bind(this));
+    router.mergeRoutes(
+      localPath,
+      this.submitToMap.bind(this),
+      this.routeMiddlewares
+    );
   }
 
   mergeRoutes(
     localPath: string,
-    mountPath: string = '',
-    submitToMapFun: Router['submitToMap']
+    submitToMapFun: Router['submitToMap'],
+    routeMiddlewares: Handler[]
   ) {
-    this.mountpath = path.join(mountPath, localPath);
-
     for (const k in this.localRequestMap) {
       const method = k;
       const reqArr: Array<RequestTuple> = this.localRequestMap[k];
       reqArr.forEach((v, _) => {
-        submitToMapFun(
-          method,
-          path.join(mountPath, localPath, v.path),
-          v.handlers
-        );
+        submitToMapFun(method, path.join(localPath, v.path), v.handlers);
       });
     }
   }
 
+  // mergeRoutes(
+  //   localPath: string,
+  //   mountPath: string = '',
+  //   submitToMapFun: Router['submitToMap']
+  // ) {
+  //   this.mountpath = path.join(mountPath, localPath);
+
+  //   for (const k in this.localRequestMap) {
+  //     const method = k;
+  //     const reqArr: Array<RequestTuple> = this.localRequestMap[k];
+  //     reqArr.forEach((v, _) => {
+  //       submitToMapFun(
+  //         method,
+  //         path.join(mountPath, localPath, v.path),
+  //         v.handlers
+  //       );
+  //     });
+  //   }
+  // }
+
+  // TODO: see if mountpath is needed
   attach(globalPath: string, mountPath: string = '') {
     this.mountpath = path.join(mountPath, globalPath);
 
