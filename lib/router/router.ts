@@ -10,6 +10,8 @@ import {
 import type OvenjoyRequest from 'lib/request';
 import path from 'path';
 import type OvenJoyServer from 'lib/ovenjoy';
+import query from 'lib/middleware/query';
+import bodyParser from 'lib/middleware/parser';
 
 type Mutable<T> = {
   -readonly [k in keyof T]: T[k];
@@ -227,7 +229,10 @@ class Router implements HttpMethods {
 
     const { params, ...routeData } = handler;
     mutableOvenjoyRequest.params = params;
-    mutableOvenjoyRequest.route = routeData;
+    mutableOvenjoyRequest.route = {
+      ...routeData,
+      middlewares: [bodyParser.json, query, ...routeData.middlewares],
+    };
   }
 
   match(path: string, method: HttpMethodTypes): Nullable<RouteDataType> {

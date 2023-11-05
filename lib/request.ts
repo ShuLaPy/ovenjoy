@@ -1,16 +1,44 @@
 import { RouteDataType } from '@ovenjoy-types';
 import OvenJoyServer from './ovenjoy';
 
-class OvenjoyRequest extends Request {
+class OvenjoyRequest {
   public readonly params: Nullable<{ [key: string]: string }>;
   public readonly path: string;
   public readonly route: RouteDataType;
+  public readonly url: string;
+  public request: Request;
   [key: string]: any;
 
   constructor(req: Request) {
-    super(req);
+    // super(req);
+    this.request = req;
+    this.url = req.url;
     this.path = new URL(req.url).pathname;
     OvenJoyServer.getInstance().router().handle(this);
+  }
+
+  public get method() {
+    return this.request.method;
+  }
+
+  public get headers() {
+    return this.request.headers;
+  }
+
+  public text() {
+    return this.request.text();
+  }
+
+  public json() {
+    return this.request.json();
+  }
+
+  public parseBlob() {
+    return this.request.blob();
+  }
+
+  public formData() {
+    return this.request.formData();
   }
 
   // req.path - /about/admin/12345 - DONE
