@@ -1,5 +1,12 @@
 
 
+## [0.1.0-alpha.1](https://github.com/ShuLaPy/ovenjoy/compare/0.1.0-alpha.0...0.1.0-alpha.1) (2023-11-06)
+
+
+### Bug Fixes
+
+* publish only dist folder on npm ([51155a6](https://github.com/ShuLaPy/ovenjoy/commit/51155a6721fee6d3cebdc2cf13577f6b225fefba))
+
 ## 0.1.0-alpha.0 (2023-11-06)
 
 
