@@ -43,5 +43,6 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
-  }
+  },
+  "version": "0.1.0-alpha.0"
 }
