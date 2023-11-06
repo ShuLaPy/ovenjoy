@@ -1,0 +1,150 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Select the bump version"
+        required: true
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+      identifier:
+        description: "Add if prerelase identifier needed"
+
+jobs:
+  create-release-major:
+    if: inputs.bump == 'major'
+    name: "Create: new major release"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: git config
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+      - name: "Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: "Install Dependencies"
+        run: bun install
+
+      - name: "Release Major"
+        if: "${{ github.event.inputs.identifier == '' }}"
+        run: bunx release-it major
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Release Major with identifier"
+        if: "${{ github.event.inputs.identifier }}"
+        run: bunx release-it major --preRelease=${{github.event.inputs.identifier}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-release-minor:
+    if: inputs.bump == 'minor'
+    name: "Create: new minor release"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: git config
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+      - name: "Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: "Install Dependencies"
+        run: bun install
+
+      - name: "Release Major"
+        if: "${{ github.event.inputs.identifier == '' }}"
+        run: bunx release-it minor
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Release Minor with identifier"
+        if: "${{ github.event.inputs.identifier }}"
+        run: bunx release-it minor --preRelease=${{github.event.inputs.identifier}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-release-patch:
+    if: inputs.bump == 'patch'
+    name: "Create: new patch release"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: git config
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+      - name: "Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: "Install Dependencies"
+        run: bun install
+
+      - name: "Release Major"
+        if: "${{ github.event.inputs.identifier == '' }}"
+        run: bun run release -- patch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Release Patch with identifier"
+        if: "${{ github.event.inputs.identifier }}"
+        run: bun run release -- patch --preRelease=${{github.event.inputs.identifier}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-npm:
+    if: ${{ always() && (needs.create-release-major.result == 'success' || needs.create-release-minor.result == 'success' || needs.create-release-patch.result == 'success')  }}
+    needs: [create-release-major, create-release-minor, create-release-patch]
+    name: "Publish: npm Registry"
+    runs-on: ubuntu-latest
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: "Pull latest changes"
+        run: git pull
+
+      - name: "Install Dependencies"
+        run: bun install
+
+      - name: "Create .npmrc"
+        run: echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+
+      # publish script will automatically run the `prepublishOnly` script
+      - name: "Publish"
+        run: npm publish

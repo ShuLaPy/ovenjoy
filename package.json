@@ -2,16 +2,21 @@
   "name": "ovenjoy",
   "author": "Shubham Lad <shubhamlad1001+ovenjoy@gmail.com>",
   "description": "Ovenjoy: Baking Delicious Web Servers with Bun",
-  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "main": "dist/index.js",
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ShuLaPy/ovenjoy.git"
   },
+  "homepage": "https://ovenjoy.shubhamlad.in",
   "scripts": {
-    "dev": "bun --watch examples/http/index.ts"
+    "dev": "bun --watch examples/http/index.ts",
+    "build": "bun build.ts && tsc",
+    "prepublishOnly": "bun run build",
+    "prepare": "husky install",
+    "release": "release-it"
   },
   "keywords": [
     "ovenjoy",
@@ -29,7 +34,12 @@
     "middleware"
   ],
   "devDependencies": {
-    "bun-types": "latest"
+    "@commitlint/cli": "^18.2.0",
+    "@commitlint/config-conventional": "^18.1.0",
+    "@release-it/conventional-changelog": "^7.0.2",
+    "bun-types": "latest",
+    "husky": "^8.0.0",
+    "release-it": "^16.2.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
